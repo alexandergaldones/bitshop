@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Cache;
 
 /*
 |--------------------------------------------------------------------------
@@ -61,9 +62,149 @@ Route::get('lametric/test', function() {
             'frames' =>
                 [
                     'text' => 'Api Title',
-                    'icon' => 'a19171'
+                    'icon' => 'a19171',
+		    //'index' => 0,
+		    //'chartData' => [
+			//3, 5, 3, 5, 3, 5
+		    //	rand(1,8), rand(1,8), rand(1,8), rand(1,8), rand(1,8), rand(1,8), rand(1,8), 
+		    //]
                 ]
             ];
+
+});
+
+
+Route::get('lametric/test2', function() {
+
+
+	$myfile = fopen("/var/www/test/testfile.txt", "w");
+
+	$output = print_r( request()->get('stock-id'), true );
+	fwrite($myfile, $output);
+	fclose($myfile);
+	
+
+	$stocks = [];
+	$picks =  explode( ',', request()->get('stock-id') );
+	foreach($picks as $pick) {
+		$stockCode = trim( substr($pick, 0, strpos($pick, "--")) );
+		$stocks[] = $stockCode;	
+	}
+
+
+	 // create curl resource 
+        $ch = curl_init(); 
+	if(empty(request()->get('stock-id'))) {
+		$stocks = ['ALI'];
+	} 
+
+        // set url 
+
+	$frames = array();
+
+	foreach($stocks as $key => $stock) {
+	        //curl_setopt($ch, CURLOPT_URL, "http://pse.tools/api/cache/market-depth?symbol=" . strtoupper($stock)); 
+		curl_setopt($ch, CURLOPT_URL, "https://stocksph.com/feed2/history?symbol=" . strtoupper($stock) . "&resolution=D&from=1515949281&to=1607652109");
+
+
+	        //return the transfer as a string 
+        	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
+
+	        // $output contains the output string 
+        	$output = curl_exec($ch); 
+
+
+		
+		$resp = json_decode($output, true) ;
+		$price = end($resp['c']);  //$resp['data'][0]['ask_price'];
+
+		$frame = 
+		                [
+        	        	    'text' => $price . ' ' . strtoupper($stock),
+        		            //'icon' => 'a47',
+        		            'icon' => 'i18358',
+				    'index' => intval($key),
+	                	];
+
+		$frames[] = $frame;
+	}
+
+        // close curl resource to free up system resources 
+        curl_close($ch);      
+
+    return [
+            'frames' => 
+				$frames
+        	    	
+	    ]
+	    ;
+});
+
+
+Route::get('/lametric/coinsph', function(){
+	$myfile = fopen("/var/www/test/testfile.txt", "w");
+
+	$output = print_r( request()->get('request-type'), true );
+	fwrite($myfile, $output);
+	fclose($myfile);
+	 // create curl resource 
+        $ch = curl_init(); 
+	
+	curl_setopt($ch, CURLOPT_URL, "https://quote.coins.ph/v1/markets/BTC-PHP"); 
+
+	//return the transfer as a string 
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
+
+	// $output contains the output string 
+	$output = curl_exec($ch); 
+		
+	$resp = json_decode($output, true) ;
+
+	$request_type = '';
+	if(request()->get('request-type') == 'Ask Price') {
+		$request_type = 'ask';
+	} else { // default Bid Price
+		$request_type = 'bid';
+	}
+
+	$frames = [];
+
+	$frame = 
+	[
+			'text' => number_format($resp['market'][$request_type]),
+			'icon' => '19435',
+			'index' => 0 
+	];
+
+	$frames[] = $frame;
+
+
+	if(request()->get('show-spread')) {
+		$spread= number_format($resp['market']['ask'] - $resp['market']['bid']);
+		$spread_pct = number_format( 100 - (($resp['market']['bid'] / $resp['market']['ask']) * 100) , 2);
+		
+		$frame  = 
+		[
+			'text' => $spread_pct . '%',
+			'icon' => '19435',
+			'index' => 1 
+		];
+
+		$frames[] = $frame;
+
+		$frame  = 
+		[
+			'text' => $spread ,
+			'icon' => '19435',
+			'index' => 1 
+		];
+
+		$frames[] = $frame;
+	}
+
+	return [
+		'frames' => $frames
+	];
 
 });
 
