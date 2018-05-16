@@ -12,5 +12,38 @@
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('avilon-home');
 });
+
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');
+
+
+Route::get('/tsk/', 'BitpaySimulateController@index');
+
+
+Route::get('/qwe', function(){
+    return view('tests.codrops');
+});
+
+
+Route::resources([
+    'p' => 'TestController',
+]);
+
+Route::resource('p', 'TestController', ['only' => [
+    'index', 'show'
+]]);
+
+Route::resource('p', 'TestController', ['except' => [
+    'create','create2', 'store', 'update', 'destroy'
+]]);
+
+
+
+
+
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');

@@ -6,7 +6,10 @@
     "type": "project",
     "require": {
         "php": ">=7.0.0",
+        "bitpay/php-client": "~2.2",
         "fideloper/proxy": "~3.3",
+        "gloudemans/shoppingcart": "^2.5",
+        "jeroennoten/laravel-adminlte": "^1.23",
         "laravel/framework": "5.5.*",
         "laravel/tinker": "~1.0"
     },
